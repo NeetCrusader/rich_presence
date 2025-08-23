@@ -1,0 +1,37 @@
+import { ClientPresenceStatusData } from "discord.js";
+
+export interface Presence {
+    _id: string;
+    _dn: string;
+    tag: string;
+    pfp: string;
+    platform: ClientPresenceStatusData;
+    status: string;
+    activities: Activity[];
+    badges: string[];
+    customStatus: {
+        name: string;
+        createdTimestamp: number;
+        emoji: string;
+    };
+}
+
+interface Activity {
+  applicationId: string;
+  assets: {
+    largeImage: string;
+    largeText: string;
+    smallImage: string;
+    smallText: string;
+  };
+  details: string;
+  emoji: string;
+  name: string;
+  state: string;
+  title: string;
+  timestamps: {
+    start: Date;
+    end: Date;
+  };
+  type: string;
+}
