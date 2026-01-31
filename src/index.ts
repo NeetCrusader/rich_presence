@@ -1,72 +1,75 @@
-import { PresenceObject } from './types/presence';
+import { Elysia } from "elysia";
+import { cors } from "@elysiajs/cors";
+import { helmet } from "elysia-helmet";
+import { PresenceRouter } from "./routes/PresenceRouter";
+import { Client, GatewayIntentBits } from "discord.js";
+import { sendPresence } from "./utils/PresenceUtils";
 
-export interface Env {
-  PRESENCE: DurableObjectNamespace;
-  FRONTEND_URL: string;
-  WEBHOOK_SECRET: string;
+let requiredEnvVars = [
+  "BOT_TOKEN",
+  "GUILD_ID",
+  "FRONTEND_URL",
+  "PORT"
+];
+
+for (let envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`Missing required environment variable: ${envVar}`);
+    process.exit(1);
+  }
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    
-    // CORS headers
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': env.FRONTEND_URL,
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Allow-Credentials': 'true',
+export const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildPresences],
+});
+
+client.on("ready", (client) => {
+  console.log(`Logged in as ${client.user.tag}`);
+});
+
+client.on("presenceUpdate", async (_oldPresence, newPresence) => {
+  if (!newPresence) return;
+  const guild = client.guilds.cache.get(process.env.GUILD_ID!);
+  if (!guild) return;
+
+  const guildMember = guild.members.cache.get(newPresence.userId);
+  if (!guildMember) return;
+
+  sendPresence(guildMember, newPresence);
+});
+
+client.login(process.env.BOT_TOKEN);
+
+export const app = new Elysia()
+  .use(PresenceRouter)
+  .get("/", () => {
+    return {
+      success: true,
+      "🐱": "meow",
     };
-
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
+  })
+  .onError(({ code }) => {
+    if (code === "NOT_FOUND") {
+      return "Route not found :(";
     }
+  })
+  .use(
+    cors({
+      origin: [process.env.FRONTEND_URL!, 'http://localhost:3070'],
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    })
+  )
+  .use(
+    helmet({
+      originAgentCluster: true,
+      dnsPrefetchControl: true,
+      permittedCrossDomainPolicies: true,
+      hidePoweredBy: true,
+    })
+  )
+  .listen(process.env.PORT!);
 
-    // Health check
-    if (url.pathname === '/') {
-      return Response.json({ success: true, '🐱': 'meow' }, { headers: corsHeaders });
-    }
-
-    // Webhook endpoint - receives presence updates from Discord bot
-    if (url.pathname === '/webhook/presence' && request.method === 'POST') {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader !== `Bearer ${env.WEBHOOK_SECRET}`) {
-        return new Response('Unauthorized', { status: 401 });
-      }
-
-      const data = await request.json() as { userId: string; presence: PresenceObject };
-      const id = env.PRESENCE.idFromName(data.userId);
-      const stub = env.PRESENCE.get(id);
-      
-      await stub.fetch(new Request('https://internal/update', {
-        method: 'POST',
-        body: JSON.stringify(data.presence),
-      }));
-
-      return Response.json({ success: true }, { headers: corsHeaders });
-    }
-
-    // Presence endpoints
-    const match = url.pathname.match(/^\/presence\/([^\/]+)(\/ws)?$/);
-    if (match) {
-      const userId = match[1];
-      const isWebSocket = match[2] === '/ws';
-      
-      const id = env.PRESENCE.idFromName(userId);
-      const stub = env.PRESENCE.get(id);
-      
-      if (isWebSocket && request.headers.get('Upgrade') === 'websocket') {
-        return stub.fetch(request);
-      } else if (!isWebSocket && request.method === 'GET') {
-        const response = await stub.fetch(new Request('https://internal/get'));
-        const data = await response.json();
-        return Response.json(data, { headers: corsHeaders });
-      }
-    }
-
-    return new Response('Not Found', { status: 404, headers: corsHeaders });
-  }
-};
-
-export { PresenceDurableObject } from './durable-objects/PresenceDurableObject';
-export type { PresenceObject, CustomStatus, Activity } from './types/presence';
+console.log(
+  `Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+);
