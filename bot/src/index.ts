@@ -37,7 +37,7 @@ client.on('presenceUpdate', async (_oldPresence, newPresence) => {
   if (newPresence.activities.length > 0 && newPresence.activities[0].type === ActivityType.Custom) {
     presenceObject.customStatus = {
       name: newPresence.activities[0].state,
-      createdTimestamp: newPresence.activities[0].createdTimestamp!,
+      createdTimestamp: newPresence.activities[0].createdTimestamp ?? Date.now(),
       emoji: formatEmoji(newPresence.activities[0].emoji),
     };
   }

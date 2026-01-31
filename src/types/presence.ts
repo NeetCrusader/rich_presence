@@ -5,25 +5,38 @@ export interface PresenceObject {
   status: string;
   customStatus: CustomStatus | null;
   activities: Activity[];
-  platform: any;
-  badges: any[];
+  platform: ClientPresenceStatusData;
+  badges: string[] | null;
   _dn: string;
 }
 
 export interface CustomStatus {
   name: string | null;
   createdTimestamp: number;
-  emoji: any;
+  emoji: string | null;
+}
+
+export interface ActivityAssets {
+  smallImage: string | null;
+  smallText: string | null;
+  largeImage: string | null;
+  largeText: string | null;
 }
 
 export interface Activity {
   applicationId: string | null;
-  assets: any;
+  assets: ActivityAssets;
   details: string | null;
-  emoji: any;
+  emoji: string | null;
   name: string;
   title: string | null;
   state: string | null;
   type: string;
   timestamps: { start: Date | null; end: Date | null } | null;
+}
+
+export interface ClientPresenceStatusData {
+  desktop?: string;
+  mobile?: string;
+  web?: string;
 }

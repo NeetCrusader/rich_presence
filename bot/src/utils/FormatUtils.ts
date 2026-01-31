@@ -81,14 +81,15 @@ export async function formatAssets(activity: Activity): Promise<{ smallImage: st
         } else {
             try {
                 const response = await fetch(`https://discord.com/api/v10/applications/${activity.applicationId}/rpc`);
-                const gameData = await response.json();
+                const gameData = await response.json() as { icon?: string };
                 return {
                     smallText: null,
                     smallImage: null,
-                    largeImage: `${gameData ? `https://cdn.discordapp.com/app-icons/${activity.applicationId}/${gameData.icon}.webp?size=56&keep_aspect_ratio=false` : 'https://r2.e-z.host/unknown_game.png'}`,
+                    largeImage: `${gameData?.icon ? `https://cdn.discordapp.com/app-icons/${activity.applicationId}/${gameData.icon}.webp?size=56&keep_aspect_ratio=false` : 'https://r2.e-z.host/unknown_game.png'}`,
                     largeText: null,
                 };
             } catch (error) {
+                console.error(`Failed to fetch game data for application ${activity.applicationId}:`, error);
                 return {
                     smallText: null,
                     smallImage: null,

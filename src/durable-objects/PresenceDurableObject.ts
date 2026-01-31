@@ -1,6 +1,8 @@
+import { PresenceObject } from '../types/presence';
+
 export class PresenceDurableObject {
   private state: DurableObjectState;
-  private presence: any = null;
+  private presence: PresenceObject | null = null;
   private sessions: Set<WebSocket> = new Set();
 
   constructor(state: DurableObjectState) {

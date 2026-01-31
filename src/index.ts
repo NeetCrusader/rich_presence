@@ -1,3 +1,5 @@
+import { PresenceObject } from './types/presence';
+
 export interface Env {
   PRESENCE: DurableObjectNamespace;
   FRONTEND_URL: string;
@@ -32,7 +34,7 @@ export default {
         return new Response('Unauthorized', { status: 401 });
       }
 
-      const data = await request.json() as { userId: string; presence: any };
+      const data = await request.json() as { userId: string; presence: PresenceObject };
       const id = env.PRESENCE.idFromName(data.userId);
       const stub = env.PRESENCE.get(id);
       
@@ -67,3 +69,4 @@ export default {
 };
 
 export { PresenceDurableObject } from './durable-objects/PresenceDurableObject';
+export type { PresenceObject, CustomStatus, Activity } from './types/presence';
