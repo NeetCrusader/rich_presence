@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/bot/node_modules
 /.pnp
 .pnp.js
 
@@ -14,6 +15,9 @@
 
 # production
 /build
+/bot/build
+/.wrangler
+/dist
 
 # misc
 .DS_Store
