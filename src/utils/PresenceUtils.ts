@@ -9,7 +9,7 @@ export async function sendPresence(
   ws?: any,
   local?: boolean
 ) {
-  const displayName = guildMember?.displayName ?? newPresence?.user?.globalName ?? newPresence?.user?.username;
+  const displayName = newPresence?.user?.globalName ?? newPresence?.user?.username ?? guildMember?.displayName;
 
   if (newPresence) {
     const presenceObject: PresenceObject = {
